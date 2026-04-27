@@ -1,14 +1,15 @@
 from google.ds_python_interpreter import HTML
+import base64
 
-# 更新後的網頁程式碼：修復卡牌翻轉與互動邏輯
-html_code_v2 = """
+# 定義網頁程式碼
+html_code = """
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EcoPulse - SDG12 責任消費與生產</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -18,11 +19,23 @@ html_code_v2 = """
             --earth-beige: #F2E8CF;
             --dark-olive: #3E4C33;
             --text-gray: #4a4a4a;
+            --accent-orange: #D98324;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Noto Sans TC', sans-serif; }
-        body { background-color: var(--earth-beige); color: var(--text-gray); overflow-x: hidden; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Noto Sans TC', sans-serif;
+        }
 
+        body {
+            background-color: var(--earth-beige);
+            color: var(--text-gray);
+            line-height: 1.6;
+        }
+
+        /* 導覽列 */
         nav {
             background-color: white;
             padding: 1rem 5%;
@@ -35,23 +48,97 @@ html_code_v2 = """
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
-        .logo { font-size: 1.5rem; font-weight: bold; color: var(--primary-green); }
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-green);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-        section { padding: 60px 10%; }
-        .section-title { text-align: center; margin-bottom: 40px; font-size: 2rem; color: var(--dark-olive); }
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
 
-        /* --- 卡牌翻轉核心樣式 --- */
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-gray);
+            font-weight: 500;
+            transition: 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-green);
+        }
+
+        /* Hero 區塊 */
+        .hero {
+            height: 80vh;
+            background: linear-gradient(rgba(255,255,255,0.4), rgba(255,255,255,0.4)), url('https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            color: var(--dark-olive);
+            margin-bottom: 10px;
+        }
+
+        .hero p {
+            font-size: 1.5rem;
+            color: var(--primary-green);
+            font-weight: 500;
+        }
+
+        /* 內容區塊通用樣式 */
+        section {
+            padding: 80px 10%;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 50px;
+            font-size: 2.5rem;
+            color: var(--dark-olive);
+        }
+
+        /* 關於我們 */
+        .about-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: center;
+        }
+
+        .about-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+        }
+
+        /* 問題與解方 (卡片翻轉效果) */
         .issue-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 25px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
         }
 
         .flip-card {
             background-color: transparent;
-            height: 380px;
+            width: 100%;
+            height: 350px;
             perspective: 1000px;
-            cursor: pointer;
         }
 
         .flip-card-inner {
@@ -59,12 +146,12 @@ html_code_v2 = """
             width: 100%;
             height: 100%;
             text-align: center;
-            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.6s;
             transform-style: preserve-3d;
+            cursor: pointer;
         }
 
-        /* 點擊後切換此 Class */
-        .flip-card.is-flipped .flip-card-inner {
+        .flip-card:hover .flip-card-inner {
             transform: rotateY(180deg);
         }
 
@@ -78,13 +165,13 @@ html_code_v2 = """
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 30px;
+            padding: 20px;
             border-radius: 20px;
-            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
         }
 
         .flip-card-front {
             background-color: white;
+            color: var(--dark-olive);
             border: 2px solid var(--light-green);
         }
 
@@ -94,76 +181,156 @@ html_code_v2 = """
             transform: rotateY(180deg);
         }
 
-        .flip-card i { font-size: 3.5rem; margin-bottom: 20px; color: var(--primary-green); }
-        .flip-card-back i { color: white; }
-        .hint-text { font-size: 0.9rem; color: #888; margin-top: 15px; }
-
-        /* --- 測驗區 --- */
-        .quiz-container { background: white; padding: 40px; border-radius: 20px; max-width: 900px; margin: 0 auto; }
-        .btn {
-            background: var(--primary-green); color: white; padding: 12px 30px;
-            border: none; border-radius: 25px; cursor: pointer; transition: 0.3s; margin-top: 20px;
+        .flip-card i {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: var(--primary-green);
         }
-        .btn:hover { background: var(--dark-olive); }
 
-        footer { background: var(--dark-olive); color: white; text-align: center; padding: 30px; margin-top: 50px; }
+        .flip-card-back i {
+            color: white;
+        }
+
+        /* 環保測驗區 */
+        .quiz-container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .question {
+            margin-bottom: 30px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 20px;
+        }
+
+        .options label {
+            display: block;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+
+        .result-area {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 50px;
+            align-items: center;
+        }
+
+        #radarChart {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        /* 頁尾 */
+        footer {
+            background: var(--dark-olive);
+            color: white;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .btn {
+            background: var(--primary-green);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: 0.3s;
+        }
+
+        .btn:hover {
+            background: var(--dark-olive);
+        }
+
+        @media (max-width: 768px) {
+            .about-grid, .result-area {
+                grid-template-columns: 1fr;
+            }
+            .hero h1 { font-size: 2.5rem; }
+        }
     </style>
 </head>
 <body>
 
     <nav>
-        <div class="logo"><i class="fas fa-leaf"></i> ECO PULSE</div>
+        <div class="logo">
+            <i class="fas fa-leaf"></i> ECO PULSE
+        </div>
+        <ul class="nav-links">
+            <li><a href="#home">首頁</a></li>
+            <li><a href="#about">關於我們</a></li>
+            <li><a href="#issues">問題區</a></li>
+            <li><a href="#quiz">環保測驗</a></li>
+        </ul>
     </nav>
 
-    <section id="issues">
-        <h2 class="section-title">常見環保問題與解方</h2>
-        <p style="text-align: center; margin-bottom: 20px; color: #666;">（請點擊下方卡片翻看解方）</p>
-        
+    <section id="home" class="hero">
+        <h1>EcoPulse</h1>
+        <p>SDG 12 責任消費與生產</p>
+    </section>
+
+    <section id="about">
+        <h2 class="section-title">關於我們</h2>
+        <div class="about-grid">
+            <div class="about-card">
+                <h3>問題意識</h3>
+                <p>現代社會存在過度消費、塑膠污染與食物浪費等問題。我們希望透過本網站,讓使用者了解自身的消費習慣對環境的影響。</p>
+            </div>
+            <div class="about-card">
+                <h3>我們的理念</h3>
+                <p>我們致力於將永續發展目標(SDG 12)轉化為簡單的日常生活指標，讓每個人都能成為改變的一份子。</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="issues" style="background-color: #E9EDC9;">
+        <h2 class="section-title">問題與解決方案</h2>
         <div class="issue-grid">
-            <div class="flip-card" onclick="toggleFlip(this)">
+            <div class="flip-card">
                 <div class="flip-card-inner">
                     <div class="flip-card-front">
-                        <i class="fas fa-shopping-basket"></i>
+                        <i class="fas fa-shopping-cart"></i>
                         <h3>過度消費</h3>
-                        <p>雙 11 或是打折季總是買太多？</p>
-                        <span class="hint-text"><i class="fas fa-hand-pointer"></i> 點擊翻轉看解方</span>
+                        <p>點擊查看解方 →</p>
                     </div>
                     <div class="flip-card-back">
-                        <i class="fas fa-lightbulb"></i>
-                        <h3>解決方案</h3>
-                        <p>實行「購買前冷靜 72 小時」原則。分清「想要」與「需要」，並優先選擇高品質、二手的長久耐用品。</p>
+                        <i class="fas fa-check-circle"></i>
+                        <h3>聰明購買</h3>
+                        <p>購買前三思，選擇耐用、可修復的產品，拒絕快時尚與非必要的購買。</p>
                     </div>
                 </div>
             </div>
-
-            <div class="flip-card" onclick="toggleFlip(this)">
+            <div class="flip-card">
                 <div class="flip-card-inner">
                     <div class="flip-card-front">
-                        <i class="fas fa-trash-alt"></i>
-                        <h3>塑膠危機</h3>
-                        <p>台灣一年消耗超過 20 億個飲料杯？</p>
-                        <span class="hint-text"><i class="fas fa-hand-pointer"></i> 點擊翻轉看解方</span>
+                        <i class="fas fa-box-open"></i>
+                        <h3>塑膠污染</h3>
+                        <p>點擊查看解方 →</p>
                     </div>
                     <div class="flip-card-back">
                         <i class="fas fa-recycle"></i>
-                        <h3>解決方案</h3>
-                        <p>養成攜帶環保杯、環保餐具的習慣。拒絕一次性吸管與塑膠袋，從源頭減量才是根本之道。</p>
+                        <h3>減塑生活</h3>
+                        <p>攜帶環保餐具與購物袋，減少購買單次包裝產品，支持裸裝商店。</p>
                     </div>
                 </div>
             </div>
-
-            <div class="flip-card" onclick="toggleFlip(this)">
+            <div class="flip-card">
                 <div class="flip-card-inner">
                     <div class="flip-card-front">
-                        <i class="fas fa-hamburger"></i>
+                        <i class="fas fa-apple-alt"></i>
                         <h3>食物浪費</h3>
-                        <p>全球約有三分之一的食物被丟棄？</p>
-                        <span class="hint-text"><i class="fas fa-hand-pointer"></i> 點擊翻轉看解方</span>
+                        <p>點擊查看解方 →</p>
                     </div>
                     <div class="flip-card-back">
                         <i class="fas fa-utensils"></i>
-                        <h3>解決方案</h3>
-                        <p>推廣「惜食」概念。吃多少煮多少，剩菜妥善保存或利用。支持在地食材，減少運輸過程的碳足跡。</p>
+                        <h3>惜食行動</h3>
+                        <p>計畫性採買、妥善保存食物，優先選擇在地食材減少碳足跡。</p>
                     </div>
                 </div>
             </div>
@@ -171,65 +338,104 @@ html_code_v2 = """
     </section>
 
     <section id="quiz">
-        <h2 class="section-title">環保力大檢測</h2>
+        <h2 class="section-title">環保指數測驗</h2>
         <div class="quiz-container">
-            <div class="question">
-                <p>1. 您是否習慣攜帶環保購物袋？</p>
-                <input type="radio" name="q1" value="5" checked> 總是
-                <input type="radio" name="q1" value="3"> 偶爾
-                <input type="radio" name="q1" value="1"> 很少
+            <div id="quiz-form">
+                <div class="question">
+                    <p>1. 您外出時是否會攜帶自備環保袋或餐具？</p>
+                    <div class="options">
+                        <label><input type="radio" name="q1" value="5" checked> 總是</label>
+                        <label><input type="radio" name="q1" value="3"> 偶爾</label>
+                        <label><input type="radio" name="q1" value="1"> 從不</label>
+                    </div>
+                </div>
+                <div class="question">
+                    <p>2. 您是否會主動進行資源回收與垃圾分類？</p>
+                    <div class="options">
+                        <label><input type="radio" name="q2" value="5" checked> 是</label>
+                        <label><input type="radio" name="q2" value="3"> 有時會</label>
+                        <label><input type="radio" name="q2" value="1"> 不會</label>
+                    </div>
+                </div>
+                <div class="question">
+                    <p>3. 您購買商品前是否會考慮其包裝或環境影響？</p>
+                    <div class="options">
+                        <label><input type="radio" name="q3" value="5" checked> 每次都會</label>
+                        <label><input type="radio" name="q3" value="3"> 視情況而定</label>
+                        <label><input type="radio" name="q3" value="1"> 幾乎不考慮</label>
+                    </div>
+                </div>
+                <button class="btn" onclick="calculateScore()">分析我的環保等級</button>
             </div>
-            <div class="question" style="margin-top:20px;">
-                <p>2. 您是否會主動進行垃圾分類？</p>
-                <input type="radio" name="q2" value="5" checked> 是
-                <input type="radio" name="q2" value="3"> 偶爾
-                <input type="radio" name="q2" value="1"> 否
-            </div>
-            <button class="btn" onclick="updateChart()">點擊更新雷達分析圖</button>
-            <div style="margin-top: 30px;">
-                <canvas id="ecoChart" style="max-height: 400px;"></canvas>
+
+            <div class="result-area">
+                <canvas id="radarChart"></canvas>
+                <div id="advice-box">
+                    <h3>您的環保分析</h3>
+                    <p id="total-score-text">請完成測驗以顯示結果。</p>
+                    <div id="personalized-advice" style="margin-top: 15px; color: var(--primary-green); font-weight: bold;"></div>
+                </div>
             </div>
         </div>
     </section>
 
     <footer>
-        <p>© 2024 EcoPulse | 讓每一份消費都更有價值</p>
+        <p>© 2024 EcoPulse | 資管二B 祝善煦、朱家締、羅乃慈</p>
+        <p>責任消費與生產，從你我開始。</p>
     </footer>
 
     <script>
-        // 控制翻轉的 JavaScript
-        function toggleFlip(card) {
-            card.classList.toggle('is-flipped');
-        }
-
         // 初始化雷達圖
-        const ctx = document.getElementById('ecoChart').getContext('2d');
-        let ecoChart = new Chart(ctx, {
+        const ctx = document.getElementById('radarChart').getContext('2d');
+        let radarChart = new Chart(ctx, {
             type: 'radar',
             data: {
-                labels: ['消費意識', '減塑行動', '惜食程度', '節能習慣', '綠色交通'],
+                labels: ['消費習慣', '塑膠減量', '資源回收', '能源節約', '交通低碳'],
                 datasets: [{
-                    label: '個人環保指數',
-                    data: [3, 4, 3, 5, 2],
+                    label: '環保等級分析',
+                    data: [0, 0, 0, 0, 0],
                     backgroundColor: 'rgba(74, 124, 89, 0.2)',
                     borderColor: 'rgba(74, 124, 89, 1)',
-                    borderWidth: 2
+                    pointBackgroundColor: 'rgba(74, 124, 89, 1)',
                 }]
             },
-            options: { scales: { r: { beginAtZero: true, max: 5 } } }
+            options: {
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 5
+                    }
+                }
+            }
         });
 
-        function updateChart() {
-            const v1 = parseInt(document.querySelector('input[name="q1"]:checked').value);
-            const v2 = parseInt(document.querySelector('input[name="q2"]:checked').value);
-            // 隨機模擬其他三項數值供展示
-            ecoChart.data.datasets[0].data = [v1, v2, Math.floor(Math.random()*5)+1, 4, 3];
-            ecoChart.update();
-            alert('分析結果已更新！');
+        function calculateScore() {
+            const q1 = parseInt(document.querySelector('input[name="q1"]:checked').value);
+            const q2 = parseInt(document.querySelector('input[name="q2"]:checked').value);
+            const q3 = parseInt(document.querySelector('input[name="q3"]:checked').value);
+            
+            // 模擬隨機權重分配給雷達圖
+            const newData = [q1, q3, q2, (q1+q2)/2, 4];
+            radarChart.data.datasets[0].data = newData;
+            radarChart.update();
+
+            const total = q1 + q2 + q3;
+            document.getElementById('total-score-text').innerText = `您的環保指數為 ${total} / 15 分`;
+            
+            let advice = "";
+            if(total >= 12) advice = "太棒了！您是真正的地球守護者，請繼續維持良好的永續習慣！";
+            else if(total >= 8) advice = "做得很不錯！若能更注意減少一次性包裝的購買，會更完美。";
+            else advice = "環境需要您的關注，建議從攜帶環保袋與餐具開始踏出第一步。";
+            
+            document.getElementById('personalized-advice').innerText = advice;
         }
     </script>
 </body>
 </html>
+"""
+
+# 渲染 HTML
+HTML(html_code)
 """
 
 HTML(html_code_v2)
