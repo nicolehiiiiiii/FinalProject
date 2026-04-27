@@ -1,8 +1,4 @@
-from google.ds_python_interpreter import HTML
-import base64
 
-# 定義網頁程式碼
-html_code = """
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -127,18 +123,18 @@ html_code = """
             box-shadow: 0 10px 20px rgba(0,0,0,0.05);
         }
 
-        /* 問題與解方 (卡片翻轉效果) */
+       /* --- 卡牌翻轉核心樣式 --- */
         .issue-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
         }
 
         .flip-card {
             background-color: transparent;
-            width: 100%;
-            height: 350px;
+            height: 380px;
             perspective: 1000px;
+            cursor: pointer;
         }
 
         .flip-card-inner {
@@ -146,12 +142,12 @@ html_code = """
             width: 100%;
             height: 100%;
             text-align: center;
-            transition: transform 0.6s;
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
             transform-style: preserve-3d;
-            cursor: pointer;
         }
 
-        .flip-card:hover .flip-card-inner {
+        /* 點擊後切換此 Class */
+        .flip-card.is-flipped .flip-card-inner {
             transform: rotateY(180deg);
         }
 
@@ -165,13 +161,13 @@ html_code = """
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 20px;
+            padding: 30px;
             border-radius: 20px;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
         }
 
         .flip-card-front {
             background-color: white;
-            color: var(--dark-olive);
             border: 2px solid var(--light-green);
         }
 
@@ -181,16 +177,9 @@ html_code = """
             transform: rotateY(180deg);
         }
 
-        .flip-card i {
-            font-size: 3rem;
-            margin-bottom: 20px;
-            color: var(--primary-green);
-        }
-
-        .flip-card-back i {
-            color: white;
-        }
-
+        .flip-card i { font-size: 3.5rem; margin-bottom: 20px; color: var(--primary-green); }
+        .flip-card-back i { color: white; }
+        .hint-text { font-size: 0.9rem; color: #888; margin-top: 15px; }
         /* 環保測驗區 */
         .quiz-container {
             background: white;
@@ -432,10 +421,4 @@ html_code = """
     </script>
 </body>
 </html>
-"""
 
-# 渲染 HTML
-HTML(html_code)
-"""
-
-HTML(html_code_v2)
