@@ -367,46 +367,233 @@
     </section>
 
     <section id="quiz">
-        <h2 class="section-title">環保指數測驗</h2>
-        <div class="quiz-container">
-            <div id="quiz-form">
-                <div class="question">
-                    <p>1. 您外出時是否會攜帶自備環保袋或餐具？</p>
-                    <div class="options">
-                        <label><input type="radio" name="q1" value="5" checked> 總是</label>
-                        <label><input type="radio" name="q1" value="3"> 偶爾</label>
-                        <label><input type="radio" name="q1" value="1"> 從不</label>
-                    </div>
-                </div>
-                <div class="question">
-                    <p>2. 您是否會主動進行資源回收與垃圾分類？</p>
-                    <div class="options">
-                        <label><input type="radio" name="q2" value="5" checked> 是</label>
-                        <label><input type="radio" name="q2" value="3"> 有時會</label>
-                        <label><input type="radio" name="q2" value="1"> 不會</label>
-                    </div>
-                </div>
-                <div class="question">
-                    <p>3. 您購買商品前是否會考慮其包裝或環境影響？</p>
-                    <div class="options">
-                        <label><input type="radio" name="q3" value="5" checked> 每次都會</label>
-                        <label><input type="radio" name="q3" value="3"> 視情況而定</label>
-                        <label><input type="radio" name="q3" value="1"> 幾乎不考慮</label>
-                    </div>
-                </div>
-                <button class="btn" onclick="calculateScore()">分析我的環保等級</button>
+    <h2 class="section-title">環保指數測驗 - SDG 12 責任消費與生產</h2>
+    <div class="quiz-container">
+        <!-- 1. 開始畫面 -->
+        <div id="quiz-start-view" style="text-align: center; padding: 40px;">
+            <i class="fas fa-seedling" style="font-size: 4rem; color: var(--primary-green); margin-bottom: 20px;"></i>
+            <p style="font-size: 1.2rem; margin-bottom: 30px;">想知道您的生活習慣有多愛地球嗎？<br>透過 20 題日常測驗，領取您的專屬環保等級證書！</p>
+            <button class="btn" onclick="startQuiz()">開始測驗</button>
+        </div>
+
+        <!-- 2. 測驗分頁表單 (預設隱藏) -->
+        <div id="quiz-form-view" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 id="category-title" style="color: var(--primary-green);"></h3>
+                <span style="color: #888;">第 <span id="current-page-display">1</span> / 5 頁</span>
+            </div>
+            
+            <div id="questions-wrapper">
+                <!-- 題目將由 JavaScript 動態插入 -->
             </div>
 
-            <div class="result-area">
-                <canvas id="radarChart"></canvas>
-                <div id="advice-box">
-                    <h3>您的環保分析</h3>
-                    <p id="total-score-text">請完成測驗以顯示結果。</p>
-                    <div id="personalized-advice" style="margin-top: 15px; color: var(--primary-green); font-weight: bold;"></div>
+            <div style="margin-top: 30px; display: flex; justify-content: space-between;">
+                <button id="prevBtn" class="btn" onclick="movePage(-1)" style="background: #999; visibility: hidden;">回上一頁</button>
+                <button id="nextBtn" class="btn" onclick="movePage(1)">下一頁</button>
+                <button id="submitBtn" class="btn" onclick="calculateFinalScore()" style="display: none; background: var(--accent-orange);">分析我的等級</button>
+            </div>
+        </div>
+
+        <!-- 3. 結果與證書區 (預設隱藏) -->
+        <div id="result-view" style="display: none;">
+            <div id="certificate-card" style="padding: 30px; border-radius: 20px; text-align: center; margin-bottom: 30px; border: 5px double #fff; box-shadow: 0 10px 20px rgba(0,0,0,0.1);">
+                <h2 id="rank-name" style="margin-bottom: 10px; font-size: 1.8rem;"></h2>
+                <div id="rank-icon" style="font-size: 4rem; margin: 15px 0;"></div>
+                <p id="total-score-val" style="font-weight: bold; font-size: 1.2rem;"></p>
+                <hr style="margin: 15px 0; border: 0; border-top: 1px solid rgba(0,0,0,0.1);">
+                <p id="rank-description"></p>
+            </div>
+
+            <div class="result-area" style="display: block;">
+                <canvas id="radarChart" style="margin-bottom: 30px;"></canvas>
+                <div id="advice-box" class="about-card">
+                    <h3>專家改善建議</h3>
+                    <p id="personalized-advice" style="margin-top: 10px;"></p>
+                    <button class="btn" onclick="location.reload()" style="margin-top: 20px; width: 100%; background: var(--dark-olive);">重新測驗</button>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
+</section>
+
+<script>
+    // 題目定義 (5大維度, 每維度4題)
+    const quizData = [
+        { cat: "綠色飲食", qs: [
+            "點餐時若食量較小，您是否會主動要求「飯減量」以減少剩食？",
+            "您是否會優先購買「在地生產」的當季食材，減少運輸碳足跡？",
+            "您是否願意購買超商的「即期良品」（如i珍食、65折）來減少食物浪費？",
+            "外出用餐或買飲料時，您是否會自備水壺、餐具或環保吸管？"
+        ]},
+        { cat: "明智購物", qs: [
+            "購買新衣服前，您是否會先確認衣櫃已有類似款式，避免衝動購物？",
+            "您是否會刻意避開過度包裝（如過多塑膠膜、大型禮盒）的商品？",
+            "您是否會盡量減少網購頻率，以降低物流產生的包材浪費？",
+            "購物時，您是否會優先選擇「大容量裝」或「補充包」而非小包裝？"
+        ]},
+        { cat: "物品再生", qs: [
+            "當電器或鞋包壞掉時，您是否會嘗試「找人修理」而非直接買新的？",
+            "您是否會購買二手商品（如二手書、二手衣）或參與物資交換？",
+            "您是否會重複利用收到的紙箱或提袋，轉作收納或再次寄物使用？",
+            "淘汰不用物品時，您是否會優先選擇轉贈、捐贈而非直接當垃圾丟棄？"
+        ]},
+        { cat: "節能減碳", qs: [
+            "您是否會主動進行精細的回收分類（如：洗淨容器、撕下瓶口鋁箔）？",
+            "您是否已經習慣使用「電子載具」儲存發票，不索取紙本明細？",
+            "您是否會定期清理雲端信箱或刪除不用的照片，減少伺服器耗能？",
+            "離開房間或不使用電器時，您是否會確實關閉電源或拔除插頭？"
+        ]},
+        { cat: "永續意識", qs: [
+            "購買清潔用品或家電時，您是否會優先找尋「環保標章」或「節能標章」？",
+            "旅遊時，您是否會自備盥洗用品，拒絕使用飯店的一次性備品？",
+            "購買商品前，您是否會稍微考量該品牌是否有環境保護的良好承諾？",
+            "您是否會向親友分享環保資訊，或鼓勵他們一起參與綠色生活行動？"
+        ]}
+    ];
+
+    let currentStep = 0; // 0~4
+    let userAnswers = Array(20).fill(5); // 預設全部選5
+
+    function startQuiz() {
+        document.getElementById('quiz-start-view').style.display = 'none';
+        document.getElementById('quiz-form-view').style.display = 'block';
+        renderStep();
+    }
+
+    function renderStep() {
+        const wrapper = document.getElementById('questions-wrapper');
+        const data = quizData[currentStep];
+        document.getElementById('category-title').innerText = data.cat;
+        document.getElementById('current-page-display').innerText = currentStep + 1;
+        
+        let html = '';
+        data.qs.forEach((q, index) => {
+            const qIndex = currentStep * 4 + index;
+            html += `
+                <div class="question">
+                    <p><strong>${qIndex + 1}. ${q}</strong></p>
+                    <div class="options" style="display:flex; gap:20px; flex-wrap:wrap;">
+                        <label><input type="radio" name="q${qIndex}" value="5" checked> 總是 (5分)</label>
+                        <label><input type="radio" name="q${qIndex}" value="3"> 偶爾 (3分)</label>
+                        <label><input type="radio" name="q${qIndex}" value="1"> 從不 (1分)</label>
+                    </div>
+                </div>
+            `;
+        });
+        wrapper.innerHTML = html;
+
+        // 按鈕控制
+        document.getElementById('prevBtn').style.visibility = currentStep === 0 ? 'hidden' : 'visible';
+        if (currentStep === 4) {
+            document.getElementById('nextBtn').style.display = 'none';
+            document.getElementById('submitBtn').style.display = 'inline-block';
+        } else {
+            document.getElementById('nextBtn').style.display = 'inline-block';
+            document.getElementById('submitBtn').style.display = 'none';
+        }
+    }
+
+    function movePage(delta) {
+        // 儲存當前頁面答案
+        for(let i=0; i<4; i++) {
+            const qIdx = currentStep * 4 + i;
+            const selected = document.querySelector(`input[name="q${qIdx}"]:checked`);
+            if(selected) userAnswers[qIdx] = parseInt(selected.value);
+        }
+        currentStep += delta;
+        renderStep();
+        window.scrollTo({ top: document.getElementById('quiz').offsetTop - 100, behavior: 'smooth' });
+    }
+
+    function calculateFinalScore() {
+        // 儲存最後一頁答案
+        for(let i=0; i<4; i++) {
+            const qIdx = currentStep * 4 + i;
+            const selected = document.querySelector(`input[name="q${qIdx}"]:checked`);
+            if(selected) userAnswers[qIdx] = parseInt(selected.value);
+        }
+
+        const categoryScores = [0, 0, 0, 0, 0];
+        let total = 0;
+        userAnswers.forEach((val, idx) => {
+            const catIdx = Math.floor(idx / 4);
+            categoryScores[catIdx] += val;
+            total += val;
+        });
+
+        showResult(total, categoryScores);
+    }
+
+    function showResult(total, scores) {
+        document.getElementById('quiz-form-view').style.display = 'none';
+        document.getElementById('result-view').style.display = 'block';
+
+        let rank = "", icon = "", color = "", desc = "", advice = "";
+
+        if (total >= 90) {
+            rank = "金色永續守護者證書";
+            icon = "🏆";
+            color = "#FFD700";
+            desc = "完美的典範！您的消費行為展現了對地球極高的責任感。";
+            advice = "您已經是環保領域的專家！建議可以開始參與社群倡議，帶動更多人落實 SDG 12。";
+        } else if (total >= 70) {
+            rank = "銀色綠色實踐家證書";
+            icon = "🥈";
+            color = "#C0C0C0";
+            desc = "相當優秀！您已在生活中落實多項永續行動。";
+            advice = "做得很好！可以觀察雷達圖中較弱的維度（如：物品再生或永續意識），將最後一哩路補齊。";
+        } else if (total >= 50) {
+            rank = "銅色環保潛力股證書";
+            icon = "🥉";
+            color = "#CD7F32";
+            desc = "不錯的起點！您已具備基本的環保概念，但仍有進步空間。";
+            advice = "試著從「拒絕不必要的包裝」或「減少一次性用品」開始，您會發現生活變得更清爽、更愛地球。";
+        } else {
+            rank = "地球觀察員認證";
+            icon = "🌱";
+            color = "#A8E6CF";
+            desc = "加油！每一步小小的改變，都能減少環境的負擔。";
+            advice = "環保不難，明天嘗試「不拿塑膠袋」或「吃完碗中所有食物」，就是最好的開始！";
+        }
+
+        const cert = document.getElementById('certificate-card');
+        cert.style.backgroundColor = color;
+        document.getElementById('rank-name').innerText = rank;
+        document.getElementById('rank-icon').innerText = icon;
+        document.getElementById('total-score-val').innerText = `最終評分：${total} / 100`;
+        document.getElementById('rank-description').innerText = desc;
+        document.getElementById('personalized-advice').innerText = advice;
+
+        // 繪製雷達圖
+        const ctx = document.getElementById('radarChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['綠色飲食', '明智購物', '物品再生', '節能減碳', '永續意識'],
+                datasets: [{
+                    label: '您的環保表現度',
+                    data: scores,
+                    backgroundColor: 'rgba(74, 124, 89, 0.2)',
+                    borderColor: '#4A7C59',
+                    pointBackgroundColor: '#4A7C59',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 20,
+                        ticks: { stepSize: 5 }
+                    }
+                }
+            }
+        });
+        
+        window.scrollTo({ top: document.getElementById('quiz').offsetTop - 50, behavior: 'smooth' });
+    }
+</script>
+
 
     <footer>
         <p>© 2024 EcoPulse | 資管二B 祝善煦、朱家締、羅乃慈</p>
